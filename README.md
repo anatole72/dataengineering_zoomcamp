@@ -4,7 +4,6 @@ course [data-engineering-zoomcamp](https://github.com/DataTalksClub/data-enginee
 
 # Module 1 Homework: Docker & SQL
 
-Shell commands or SQL queries necessary for answering the questions.
 
 
 ## Task 1. Understanding docker first run
