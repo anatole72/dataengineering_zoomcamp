@@ -133,10 +133,12 @@ East Harlem North, Morningside Heights
 Morningside Heights, Astoria Park, East Harlem South
 Bedford, East Harlem North, Astoria Park
 
+Solution
+
 Query:
 
 ```sql
-WITH biggest_pickup_loc_ids AS (
+WITH pickups AS (
     SELECT "pulocationid"
     FROM green_taxi_trips
     WHERE DATE(lpep_pickup_datetime) = '2019-10-18'
@@ -145,7 +147,7 @@ WITH biggest_pickup_loc_ids AS (
 )
 SELECT "zone"
 FROM taxi_zone_lookup
-WHERE "locationid" IN (SELECT * FROM biggest_pickup_loc_ids);
+WHERE "locationid" IN (SELECT * FROM pickups);
 ```
 
 Data output:
@@ -156,7 +158,22 @@ Data output:
 | East Harlem South |
 | Morningside Heights |
 
-## Task 6
+
+## Task 6   Largest tip
+
+For the passengers picked up in October 2019 in the zone named "East Harlem North" which was the drop off zone that had the largest tip?
+
+Note: it's tip , not trip
+
+We need the name of the zone, not the ID.
+
+Yorkville West
+JFK Airport
+East Harlem North
+East Harlem South
+
+
+Solution
 
 Query:
 
@@ -169,7 +186,8 @@ FROM
         ON tr."pulocationid" = zn_pu."locationid"
     INNER JOIN taxi_zone_lookup AS zn_do
         ON tr."dolocationid" = zn_do."locationid"
-WHERE DATE_TRUNC('MONTH', tr.lpep_pickup_datetime) = '2019-10-01'
+WHERE tr.lpep_pickup_datetime >= '2019-10-01'
+  AND tr.lpep_pickup_datetime < '2019-11-01'
   AND zn_pu."zone" = 'East Harlem North'
 ORDER BY tr.tip_amount DESC
 LIMIT 1;
@@ -181,6 +199,14 @@ Data output:
 |------|
 | JFK Airport |
 
-## Question 7. Largest tip
+## Task 7.  Terraform Workflow
+
+Which of the following sequences, respectively, describes the workflow for:
+
+Downloading the provider plugins and setting up backend,
+Generating proposed changes and auto-executing the plan
+Remove all resources managed by terraform`
+
+Solution
 
 terraform init, terraform apply -auto-approve, terraform destroy
