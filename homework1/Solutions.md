@@ -55,8 +55,12 @@ volumes:
     name: vol-pgadmin_data
 ```
 
+Solution
+
+Since both services are running in the same Docker Compose network, pgadmin should use db:5432 to connect to the postgres database.
 ```plaintext
-Port: 5432 (the internal port exposed by the PostgreSQL container)
+Host: db
+Port: 5432
 ```
 
 
@@ -69,6 +73,8 @@ In between 1 (exclusive) and 3 miles (inclusive),
 In between 3 (exclusive) and 7 miles (inclusive),
 In between 7 (exclusive) and 10 miles (inclusive),
 Over 10 miles
+
+Solution
 
 Query:
 ```sql
@@ -102,6 +108,8 @@ Tip: For every day, we only care about one single trip with the longest distance
 2019-10-24
 2019-10-26
 2019-10-31
+
+Solution
 
 Query:
 
