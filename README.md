@@ -220,9 +220,9 @@ Remove all resources managed by terraform`
 
 Solution
 
-
-terraform init
-terraform plan && terraform apply -auto-approve
-terraform destroy
-
+```
+terraform init,
+ terraform apply -auto-approve,
+  terraform destroy
+```
 
