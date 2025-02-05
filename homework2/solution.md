@@ -4,8 +4,8 @@
 
 Complete the Quiz shown below. It’s a set of 6 multiple-choice questions to test your understanding of workflow orchestration, Kestra and ETL pipelines for data lakes and warehouses.
 
-1) Within the execution for `Yellow` Taxi data for the year `2020` and month `12`: what is the uncompressed file size (i.e. the output file `yellow_tripdata_2020-12.csv` of the `extract` task)?
--**_ 128.3 MB*_*
+1) Within the execution for `Yellow` Taxi data for the year `2020` and month `12`: what is the uncompressed file size (i.e. the output file `yellow_tripdata_2020-12.csv` of the `extract` tas__k)?
+- **_ _128.3 MB*_*___
 - 134.5 MB
 - 364.7 MB
 - 692.6 MB
@@ -26,9 +26,9 @@ the size of the file `yellow_tripdata_2020-12.csv`  is **128.3 MB**.
 
 3) How many rows are there for the `Yellow` Taxi data for all CSV files in the year 2020?
 - 13,537.299
-- 24,648,499
+- **_24,648,499_**
 - 18,324,219
-- _**29,430,127**_
+- 29,430,127
 
 #### Answer 
  let us query the dataset `yellow_tripdata` with : 
