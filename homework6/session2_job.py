@@ -44,7 +44,9 @@ def create_events_source_kafka(t_env):
             'topic' = 'green-trips',
             'scan.startup.mode' = 'earliest-offset',
             'properties.auto.offset.reset' = 'earliest',
-            'format' = 'json'
+            'format' = 'json',
+	        'json.fail-on-missing-field' = 'false', 
+            'json.ignore-parse-errors' = 'true'     
         );
         """
     t_env.execute_sql(source_ddl)
