@@ -289,7 +289,7 @@ Now we have the data in the Kafka stream. It's time to process it.
 > flink job
 
 ```bash
-docker compose exec jobmanager ./bin/flink run -py /opt/src/job/session2_job.py --pyFiles /opt/src/job -d
+docker compose exec jobmanager ./bin/flink run -py /opt/src/job/session_job.py --pyFiles /opt/src/job -d
 ```
 ```bash
 select * from 'taxi_sessions_aggregated';
