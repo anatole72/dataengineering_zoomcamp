@@ -1,0 +1,137 @@
+docker compose exec redpanda-1 rpk version
+WARN[0000] /workspace/pechorin/zoomcamp/data-engineering-zoomcamp/06-streaming/pyflink/docker-compose.yml: `version` is obsolete 
+Version:     v24.2.18
+Git ref:     f9a22d4430
+Build date:  2025-02-14T12:52:55Z
+OS/Arch:     linux/amd64
+Go version:  go1.23.1
+
+Redpanda Cluster
+  node-1  v24.2.18 - f9a22d443087b824803638623d6b7492ec8221f9
+
+
+
+
+WARN[0000] /workspace/pechorin/zoomcamp/data-engineering-zoomcamp/06-streaming/pyflink/docker-compose.yml: `version` is obsolete 
+TOPIC        STATUS
+green-trips  OK
+
+
+
+took 49.01 seconds
+
+
+
+CREATE TABLE taxi_sessions_aggregated (
+    session_start TIMESTAMP(3),
+    session_end TIMESTAMP(3),
+    pu_location INT,
+    do_location INT,
+    trip_count BIGINT,
+    session_duration BIGINT
+)
+
+
+
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.table import StreamTableEnvironment, EnvironmentSettings, DataTypes
+from pyflink.table.descriptors import Schema, Json, Kafka
+from pyflink.common import WatermarkStrategy, Duration
+
+def create_sessions_sink(t_env):
+    table_name = 'taxi_sessions_streaks'
+    sink_ddl = f"""
+        CREATE TABLE {table_name} (
+            session_start TIMESTAMP(3),
+            session_end TIMESTAMP(3),
+            pu_location INT,
+            do_location INT,
+            trip_count BIGINT,
+            session_duration BIGINT,
+            PRIMARY KEY (session_start, pu_location, do_location) NOT ENFORCED
+        ) WITH (
+            'connector' = 'jdbc',
+            'url' = 'jdbc:postgresql://postgres:5432/postgres',
+            'table-name' = '{table_name}',
+            'username' = 'postgres',
+            'password' = 'postgres',
+            'driver' = 'org.postgresql.Driver'
+        );
+        """
+    t_env.execute_sql(sink_ddl)
+    return table_name
+
+def create_green_trips_source(t_env):
+    table_name = "green_trips"
+    source_ddl = f"""
+        CREATE TABLE {table_name} (
+            PULocationID INT,
+            DOLocationID INT,
+            lpep_pickup_datetime TIMESTAMP(3),
+            lpep_dropoff_datetime TIMESTAMP(3),
+            WATERMARK FOR lpep_dropoff_datetime AS lpep_dropoff_datetime - INTERVAL '5' SECOND
+        ) WITH (
+            'connector' = 'kafka',
+            'properties.bootstrap.servers' = 'redpanda-1:29092',
+            'topic' = 'green-trips',
+            'scan.startup.mode' = 'earliest-offset',
+            'properties.auto.offset.reset' = 'earliest',
+            'format' = 'json'
+        );
+        """
+    t_env.execute_sql(source_ddl)
+    return table_name
+
+def session_streak_analysis():
+    # Set up execution environment
+    env = StreamExecutionEnvironment.get_execution_environment()
+    env.enable_checkpointing(10 * 1000)  # 10 seconds
+    env.set_parallelism(3)
+
+    # Set up table environment
+    settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
+    t_env = StreamTableEnvironment.create(env, settings)
+
+    try:
+        source_table = create_green_trips_source(t_env)
+        sink_table = create_sessions_sink(t_env)
+
+        # Find the longest unbroken streaks using session windows
+        query = f"""
+        INSERT INTO {sink_table}
+        SELECT
+            SESSION_START(lpep_dropoff_datetime, INTERVAL '5' MINUTE) AS session_start,
+            SESSION_END(lpep_dropoff_datetime, INTERVAL '5' MINUTE) AS session_end,
+            PULocationID,
+            DOLocationID,
+            COUNT(*) AS trip_count,
+            UNIX_TIMESTAMP(SESSION_END(lpep_dropoff_datetime, INTERVAL '5' MINUTE)) - 
+            UNIX_TIMESTAMP(SESSION_START(lpep_dropoff_datetime, INTERVAL '5' MINUTE)) AS session_duration
+        FROM {source_table}
+        GROUP BY 
+            SESSION(lpep_dropoff_datetime, INTERVAL '5' MINUTE),
+            PULocationID,
+            DOLocationID
+        """
+
+        t_env.execute_sql(query).wait()
+
+    except Exception as e:
+        print("Error processing taxi session streaks:", str(e))
+        raise
+
+if __name__ == '__main__':
+    session_streak_analysis()
+
+
+
+for JOB_ID in $(docker compose exec jobmanager ./bin/flink list | grep "RUNNING\|RESTARTING" | awk '{print $4}'); do
+  docker compose exec jobmanager ./bin/flink cancel $JOB_ID
+done
+
+
+
+
+SELECT * FROM taxi_sessions_aggregated 
+ORDER BY session_duration DESC 
+LIMIT 10;

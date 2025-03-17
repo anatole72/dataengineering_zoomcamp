@@ -1,0 +1,79 @@
+import json
+from kafka import KafkaProducer
+import pandas as pd
+import numpy as np
+from time import time
+import os
+import gzip
+import requests
+
+
+def json_serializer(data):
+    return json.dumps(data).encode('utf-8')
+
+
+server = 'localhost:9092'
+
+producer = KafkaProducer(
+    bootstrap_servers=[server],
+    value_serializer=json_serializer
+)
+
+if producer.bootstrap_connected():
+    print("Successfully connected to Kafka!")
+else:
+    print("Failed to connect to Kafka.")
+
+csv_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz"
+local_file = "green_tripdata_2019-10.csv.gz"
+
+
+if not os.path.exists(local_file):
+    print("Downloading the dataset...")
+    response = requests.get(csv_url)
+    with open(local_file, 'wb') as f:
+        f.write(response.content)
+    print("Dataset downloaded successfully.")
+
+
+uncompressed_file = "green_tripdata_2019-10.csv"
+if not os.path.exists(uncompressed_file):
+    print("Decompressing the dataset...")
+    with gzip.open(local_file, 'rb') as f_in:
+        with open(uncompressed_file, 'wb') as f_out:
+            f_out.write(f_in.read())
+    print("Dataset decompressed successfully.")
+
+
+print("Reading the dataset...")
+df = pd.read_csv(
+    uncompressed_file,
+    usecols=[
+        'lpep_pickup_datetime',
+        'lpep_dropoff_datetime',
+        'PULocationID',
+        'DOLocationID',
+        'passenger_count',
+        'trip_distance',
+        'tip_amount'
+    ]
+)
+
+
+df = df.replace(to_replace=np.nan, value=None)
+
+# Преобразование DataFrame в список словарей
+df1 = df.to_dict(orient='records')
+
+# Шаг 5: Отправка данных в Kafka
+print("Sending data to Kafka...")
+t0 = time()
+
+for every in df1:
+    producer.send('green-trips', value=every)
+
+producer.flush()
+producer.close()
+
+t1 = time()
+print(f"Data sent successfully in {(t1 - t0):.2f} seconds.")
