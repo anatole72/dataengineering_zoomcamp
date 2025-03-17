@@ -292,9 +292,12 @@ Now we have the data in the Kafka stream. It's time to process it.
 docker compose exec jobmanager ./bin/flink run -py /opt/src/job/session2_job.py --pyFiles /opt/src/job -d
 ```
 ```bash
-SELECT * FROM taxi_sessions_aggregated 
-ORDER BY session_duration DESC 
-LIMIT 10;
+select * from 'taxi_sessions_aggregated';
++--------------+--------------+---------------------+---------------------+-----------+-->
+| pulocationid | dolocationid | session_start       | session_end         | num_trips | s>
+|--------------+--------------+---------------------+---------------------+-----------+-->
+| 75           | 74           | 2019-10-08 17:34:02 | 2019-10-08 19:24:49 | 44        | 6>
++--------------+--------------+---------------------+---------------------+-----------+-->
 ```
 > Answer
 
